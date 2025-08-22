@@ -287,3 +287,10 @@ async def to_code(config):
     cg.add(var.set_show_config(config[CONF_BLE_ADV_SHOW_CONFIG]))
 
 
+    cg.add_define("USE_ESP32_BLE_DEVICE")
+    cg.add_define("USE_ESP32_BLE_UUID")
+    cg.add_define("USE_NUMBER")
+    cg.add_define("ESPHOME_ENTITY_NUMBER_COUNT", 1)
+    cg.add_define("USE_SELECT")
+    cg.add_define("ESPHOME_ENTITY_SELECT_COUNT", 1)
+

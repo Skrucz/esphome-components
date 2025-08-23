@@ -61,7 +61,7 @@ void BleAdvController::set_min_tx_duration(int tx_duration, int min, int max, in
 }
 
 void BleAdvController::setup() {
-#ifdef USE_API
+#ifdef USE_API_SERVICES
   register_service(&BleAdvController::on_pair, "pair_" + this->get_object_id());
   register_service(&BleAdvController::on_unpair, "unpair_" + this->get_object_id());
   register_service(&BleAdvController::on_cmd, "cmd_" + this->get_object_id(), {"cmd", "arg0", "arg1", "arg2", "arg3"});
@@ -83,7 +83,7 @@ void BleAdvController::dump_config() {
   ESP_LOGCONFIG(TAG, "  Configuration visible: %s", this->show_config_ ? "YES" : "NO");
 }
 
-#ifdef USE_API
+#ifdef USE_API_SERVICES
 void BleAdvController::on_pair() { 
   Command cmd(CommandType::PAIR);
   this->enqueue(cmd);

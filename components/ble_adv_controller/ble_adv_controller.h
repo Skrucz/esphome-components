@@ -4,7 +4,7 @@
 #include "esphome/core/entity_base.h"
 #include "esphome/core/helpers.h"
 #include "esphome/core/preferences.h"
-#ifdef USE_API
+#ifdef USE_API_SERVICES
 #include "esphome/components/api/custom_api_device.h"
 #endif
 #include "esphome/components/select/select.h"
@@ -66,7 +66,7 @@ protected:
     Interacts with the BleAdvHandler for Queue processing
  */
 class BleAdvController : public Component, public EntityBase
-#ifdef USE_API
+#ifdef USE_API_SERVICES
   , public api::CustomAPIDevice
 #endif
 {
@@ -92,7 +92,7 @@ public:
   void set_handler(BleAdvHandler * handler) { this->handler_ = handler; }
   void refresh_encoder(std::string id, size_t index);
 
-#ifdef USE_API
+#ifdef USE_API_SERVICES
   // Services
   void on_pair();
   void on_unpair();

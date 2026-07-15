@@ -190,11 +190,22 @@ BleAdvEncoder * BleAdvHandler::get_encoder(const std::string & encoding, const s
   return nullptr;
 }
 
-std::vector<std::string> BleAdvHandler::get_ids(const std::string & encoding) {
-  std::vector<std::string> ids;
+FixedVector<const char *> BleAdvHandler::get_ids(const std::string & encoding) {
+  // FixedVector must be sized up front via init(); count matching encoders first.
+  size_t count = 0;
   for(auto & encoder : this->encoders_) {
     if (encoder->is_encoding(encoding)) {
-      ids.push_back(encoder->get_id());
+      count++;
+    }
+  }
+  FixedVector<const char *> ids;
+  ids.init(count);
+  for(auto & encoder : this->encoders_) {
+    if (encoder->is_encoding(encoding)) {
+      // get_id() returns a reference to the encoder's stable id_ member (lives for the whole
+      // program), so its c_str() pointer stays valid after this FixedVector is destroyed and
+      // after SelectTraits::set_options deep-copies the pointer values.
+      ids.push_back(encoder->get_id().c_str());
     }
   }
   return ids;

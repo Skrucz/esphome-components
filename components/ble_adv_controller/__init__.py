@@ -12,6 +12,7 @@ from esphome.const import (
     PLATFORM_ESP32,
 )
 from esphome.core.entity_helpers import setup_entity
+from esphome.cpp_helpers import register_component_source
 from .const import (
     CONF_BLE_ADV_CONTROLLER_ID,
     CONF_BLE_ADV_ENCODING,
@@ -256,8 +257,10 @@ class BleAdvRegistry:
         if not cls.handler:
             hdl_id = ID("ble_adv_static_handler", type=BleAdvHandler)
             cls.handler = cg.new_Pvariable(hdl_id)
-            cg.add(cls.handler.set_component_source("ble_adv_handler"))
-            cg.add(cg.App.register_component(cls.handler))
+            # ESPHome 2026.x: the component source is now a uint8_t index (obtained via
+            # register_component_source) and registration goes through register_component_.
+            # This reproduces the old set_component_source("ble_adv_handler") + register_component().
+            cg.add(cg.App.register_component_(cls.handler, register_component_source("ble_adv_handler")))
             for encoding, params in BLE_ADV_ENCODERS.items():
                 for variant, param_variant in params["variants"].items():
                     if "class" in param_variant:
@@ -271,6 +274,9 @@ class BleAdvRegistry:
 async def to_code(config):
     hdl = BleAdvRegistry.get()
     var = cg.new_Pvariable(config[CONF_ID])
+    # set_setup_priority() is only linkable when USE_SETUP_PRIORITY_OVERRIDE is defined in
+    # ESPHome 2026.x (the cg.register_component helper does this only for a setup_priority: key).
+    cg.add_define("USE_SETUP_PRIORITY_OVERRIDE")
     cg.add(var.set_setup_priority(300)) # start after Bluetooth
     await cg.register_component(var, config)
     await setup_entity(var, config, "ble_adv_controller")

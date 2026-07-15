@@ -14,18 +14,24 @@ void BleAdvSelect::control(const std::string &value) {
   this->rtc_.save(&hash_value);
 }
 
-void BleAdvSelect::sub_init() { 
+void BleAdvSelect::sub_init() {
   App.register_select(this);
   this->rtc_ = global_preferences->make_preference< uint32_t >(this->get_object_id_hash());
   uint32_t restored;
   if (this->rtc_.load(&restored)) {
     for (auto & opt: this->traits.get_options()) {
       if(fnv1_hash(opt) == restored) {
-        this->state = opt;
+        // Apply the persisted option via the public API so active_index_ (and therefore
+        // current_option()/the state reported to HA) stays consistent. This also fires the
+        // callback registered in set_encoding_and_variant(), refreshing cur_encoder_ to match
+        // the restored selection - reproducing the pre-2026.6 boot behaviour.
+        this->publish_state(opt);
         return;
       }
     }
   }
+  // No persisted value: the default option was already published (with active_index_ set) by
+  // set_encoding_and_variant() before this entity was registered, so nothing to do here.
 }
 
 void BleAdvNumber::control(float value) {
@@ -40,16 +46,24 @@ void BleAdvNumber::sub_init() {
   if (this->rtc_.load(&restored)) {
     this->state = restored;
   }
+  // number::Number::state is NOT deprecated; publish the restored-or-default value so the entity
+  // reports state to HA (this replaces the publish_state() that used to live in init()).
+  this->publish_state(this->state);
 }
 
 void BleAdvController::set_encoding_and_variant(const std::string & encoding, const std::string & variant) {
   this->select_encoding_.traits.set_options(this->handler_->get_ids(encoding));
   this->cur_encoder_ = this->handler_->get_encoder(encoding, variant);
-  this->select_encoding_.state = this->cur_encoder_->get_id();
-  this->select_encoding_.add_on_state_callback(std::bind(&BleAdvController::refresh_encoder, this, std::placeholders::_1, std::placeholders::_2));
+  // Publish the default option so active_index_/current_option are consistent. This runs BEFORE
+  // the callback below is registered, so it does not (yet) trigger refresh_encoder().
+  this->select_encoding_.publish_state(this->cur_encoder_->get_id());
+  this->select_encoding_.add_on_state_callback([this](size_t index) { this->refresh_encoder(index); });
 }
 
-void BleAdvController::refresh_encoder(std::string id, size_t index) {
+void BleAdvController::refresh_encoder(size_t index) {
+  // select::Select::add_on_state_callback now supplies only the index; look the id up via the
+  // select's public option_at(). get_encoder(const std::string&) accepts the const char* result.
+  auto id = this->select_encoding_.option_at(index);
   this->cur_encoder_ = this->handler_->get_encoder(id);
 }
 

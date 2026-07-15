@@ -206,7 +206,9 @@ public:
   void add_encoder(BleAdvEncoder * encoder);
   BleAdvEncoder * get_encoder(const std::string & id);
   BleAdvEncoder * get_encoder(const std::string & encoding, const std::string & variant);
-  std::vector<std::string> get_ids(const std::string & encoding);
+  // SelectTraits now stores const char* (not std::string). Return a FixedVector<const char*>
+  // whose pointers reference the encoders' program-lifetime id_ strings.
+  FixedVector<const char *> get_ids(const std::string & encoding);
 
   // Advertiser
   uint16_t add_to_advertiser(std::vector< BleAdvParam > & params);

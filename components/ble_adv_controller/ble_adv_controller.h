@@ -25,11 +25,14 @@ public:
   void init(const char * name, const StringRef & parent_name) {
     // Due to the use of sh... StringRef, we are forced to keep a ref on the built string...
     this->ref_name_ = std::string(parent_name) + " - " + std::string(name);
-    this->set_object_id(this->ref_name_.c_str());
-    this->set_name(this->ref_name_.c_str());
-    this->set_entity_category(EntityCategory::ENTITY_CATEGORY_CONFIG);
+    // configure_entity_() replaces the removed set_name()/set_object_id()/set_entity_category().
+    // object_id_hash = 0 makes the core auto-derive the hash from the name (== old set_object_id).
+    this->configure_entity_(this->ref_name_.c_str(), 0,
+                            static_cast<uint32_t>(EntityCategory::ENTITY_CATEGORY_CONFIG)
+                                << ENTITY_FIELD_ENTITY_CATEGORY_SHIFT);
+    // sub_init() registers the entity, restores any persisted value, and publishes the resulting
+    // state (moved out of init() so each entity type publishes via its own non-deprecated path).
     this->sub_init();
-    this->publish_state(this->state);
   }
 
   // register to App and restore from config / saved data
@@ -90,7 +93,7 @@ public:
   bool is_show_config() { return this->show_config_; }
 
   void set_handler(BleAdvHandler * handler) { this->handler_ = handler; }
-  void refresh_encoder(std::string id, size_t index);
+  void refresh_encoder(size_t index);
 
 #ifdef USE_API_SERVICES
   // Services

@@ -29,10 +29,9 @@ public:
     this->configure_entity_(this->ref_name_.c_str(), 0,
         static_cast<uint32_t>(EntityCategory::ENTITY_CATEGORY_CONFIG) << ENTITY_FIELD_ENTITY_CATEGORY_SHIFT);
     this->sub_init();
-    this->publish_state(this->state);
   }
 
-  // register to App and restore from config / saved data
+  // register to App, restore from config / saved data and publish
   virtual void sub_init() = 0;
 
 protected:
@@ -44,6 +43,10 @@ protected:
   BleAdvSelect: basic implementation of 'Select' to handle configuration choice from HA directly
  */
 class BleAdvSelect: public BleAdvDynConfig < select::Select > {
+public:
+  // select the option before registration, without publishing it
+  void set_initial_option(const std::string & option);
+
 protected:
   void control(const std::string &value) override;
   void sub_init() override;
@@ -90,7 +93,7 @@ public:
   bool is_show_config() { return this->show_config_; }
 
   void set_handler(BleAdvHandler * handler) { this->handler_ = handler; }
-  void refresh_encoder(std::string id, size_t index);
+  void refresh_encoder(size_t index);
 
 #ifdef USE_API_CUSTOM_SERVICES
   // Services

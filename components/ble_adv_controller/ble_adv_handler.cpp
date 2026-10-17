@@ -186,11 +186,18 @@ BleAdvEncoder * BleAdvHandler::get_encoder(const std::string & encoding, const s
   return nullptr;
 }
 
-std::vector<std::string> BleAdvHandler::get_ids(const std::string & encoding) {
-  std::vector<std::string> ids;
+FixedVector<const char *> BleAdvHandler::get_ids(const std::string & encoding) {
+  size_t count = 0;
   for(auto & encoder : this->encoders_) {
     if (encoder->is_encoding(encoding)) {
-      ids.push_back(encoder->get_id());
+      count++;
+    }
+  }
+  FixedVector<const char *> ids;
+  ids.init(count);
+  for(auto & encoder : this->encoders_) {
+    if (encoder->is_encoding(encoding)) {
+      ids.push_back(encoder->get_id().c_str());
     }
   }
   return ids;

@@ -21,10 +21,18 @@ void BleAdvSelect::sub_init() {
   if (this->rtc_.load(&restored)) {
     for (auto & opt: this->traits.get_options()) {
       if(fnv1_hash(opt) == restored) {
-        this->state = opt;
-        return;
+        this->set_initial_option(opt);
+        break;
       }
     }
+  }
+  this->publish_state(this->active_index_);
+}
+
+void BleAdvSelect::set_initial_option(const std::string & option) {
+  auto index = this->index_of(option);
+  if (index.has_value()) {
+    this->active_index_ = index.value();
   }
 }
 
@@ -40,17 +48,18 @@ void BleAdvNumber::sub_init() {
   if (this->rtc_.load(&restored)) {
     this->state = restored;
   }
+  this->publish_state(this->state);
 }
 
 void BleAdvController::set_encoding_and_variant(const std::string & encoding, const std::string & variant) {
   this->select_encoding_.traits.set_options(this->handler_->get_ids(encoding));
   this->cur_encoder_ = this->handler_->get_encoder(encoding, variant);
-  this->select_encoding_.state = this->cur_encoder_->get_id();
-  this->select_encoding_.add_on_state_callback(std::bind(&BleAdvController::refresh_encoder, this, std::placeholders::_1, std::placeholders::_2));
+  this->select_encoding_.set_initial_option(this->cur_encoder_->get_id());
+  this->select_encoding_.add_on_state_callback([this](size_t index) { this->refresh_encoder(index); });
 }
 
-void BleAdvController::refresh_encoder(std::string id, size_t index) {
-  this->cur_encoder_ = this->handler_->get_encoder(id);
+void BleAdvController::refresh_encoder(size_t index) {
+  this->cur_encoder_ = this->handler_->get_encoder(this->select_encoding_.option_at(index));
 }
 
 void BleAdvController::set_min_tx_duration(int tx_duration, int min, int max, int step) {

@@ -1,6 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.core import ID
+from esphome.core import CORE, ID
 from esphome.const import (
     CONF_DURATION,
     CONF_ID,
@@ -229,6 +229,14 @@ def validate_forced_id(config):
         raise cv.Invalid("Invalid 'forced_id' for %s - %s: %s. Maximum: 0x%X." % (encoding, variant, forced_id, max_forced_id))
     return config
 
+HANDLER_ID = "ble_adv_static_handler"
+
+def declare_handler_component(config):
+    # The shared handler is created in to_code, outside of any YAML id, but ESPHome sizes its
+    # component list from the component ids declared at validation: declare it here.
+    CORE.component_ids.add(HANDLER_ID)
+    return config
+
 CONFIG_SCHEMA = cv.All(
     cv.Any(
         *[ CONTROLLER_BASE_CONFIG.extend(
@@ -241,6 +249,7 @@ CONFIG_SCHEMA = cv.All(
     ),
     validate_forced_id,
     validate_legacy_variant,
+    declare_handler_component,
     cv.only_on([PLATFORM_ESP32]),
 )
 
@@ -252,12 +261,11 @@ async def entity_base_code_gen(var, config, platform):
 class BleAdvRegistry:
     handler = None
     @classmethod
-    def get(cls):
+    async def get(cls):
         if not cls.handler:
-            hdl_id = ID("ble_adv_static_handler", type=BleAdvHandler)
+            hdl_id = ID(HANDLER_ID, type=BleAdvHandler)
             cls.handler = cg.new_Pvariable(hdl_id)
-            cg.add(cls.handler.set_component_source("ble_adv_handler"))
-            cg.add(cg.App.register_component(cls.handler))
+            await cg.register_component(cls.handler, {})
             for encoding, params in BLE_ADV_ENCODERS.items():
                 for variant, param_variant in params["variants"].items():
                     if "class" in param_variant:
@@ -269,7 +277,7 @@ class BleAdvRegistry:
         return cls.handler
 
 async def to_code(config):
-    hdl = BleAdvRegistry.get()
+    hdl = await BleAdvRegistry.get()
     var = cg.new_Pvariable(config[CONF_ID])
     cg.add(var.set_setup_priority(300)) # start after Bluetooth
     await cg.register_component(var, config)

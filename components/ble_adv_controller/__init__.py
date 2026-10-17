@@ -12,6 +12,7 @@ from esphome.const import (
     PLATFORM_ESP32,
 )
 from esphome.core.entity_helpers import setup_entity
+from esphome.cpp_helpers import set_setup_priority
 from .const import (
     CONF_BLE_ADV_CONTROLLER_ID,
     CONF_BLE_ADV_ENCODING,
@@ -279,7 +280,7 @@ class BleAdvRegistry:
 async def to_code(config):
     hdl = await BleAdvRegistry.get()
     var = cg.new_Pvariable(config[CONF_ID])
-    cg.add(var.set_setup_priority(300)) # start after Bluetooth
+    set_setup_priority(var, 300) # start after Bluetooth
     await cg.register_component(var, config)
     await setup_entity(var, config, "ble_adv_controller")
     cg.add(var.set_handler(hdl))

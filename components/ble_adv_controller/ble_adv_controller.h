@@ -25,9 +25,9 @@ public:
   void init(const char * name, const StringRef & parent_name) {
     // Due to the use of sh... StringRef, we are forced to keep a ref on the built string...
     this->ref_name_ = std::string(parent_name) + " - " + std::string(name);
-    this->set_object_id(this->ref_name_.c_str());
-    this->set_name(this->ref_name_.c_str());
-    this->set_entity_category(EntityCategory::ENTITY_CATEGORY_CONFIG);
+    // object id hash 0: derived from the name by ESPHome
+    this->configure_entity_(this->ref_name_.c_str(), 0,
+        static_cast<uint32_t>(EntityCategory::ENTITY_CATEGORY_CONFIG) << ENTITY_FIELD_ENTITY_CATEGORY_SHIFT);
     this->sub_init();
     this->publish_state(this->state);
   }

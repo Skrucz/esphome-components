@@ -294,10 +294,10 @@ async def to_code(config):
     else:
         cg.add(var.set_forced_id(config[CONF_ID].id))
     cg.add(var.set_show_config(config[CONF_BLE_ADV_SHOW_CONFIG]))
-    if config[CONF_BLE_ADV_SHOW_CONFIG]:
-        # 'Encoding' select and 'Duration' number are created in C++, count them for ESPHome
-        CORE.register_platform_component("select", var)
-        CORE.register_platform_component("number", var)
+    # 'Encoding' select and 'Duration' number are created in C++, count them for ESPHome. Counted
+    # even without show_config: their (unused) registration code needs USE_SELECT / USE_NUMBER.
+    CORE.register_platform_component("select", var)
+    CORE.register_platform_component("number", var)
 
 
     cg.add_define("USE_ESP32_BLE_DEVICE")

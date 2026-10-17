@@ -7,17 +7,16 @@
 #include "esphome/components/api/custom_api_device.h"
 #endif
 
+#ifdef USE_ESP32_BLE_CLIENT
+// ESPBTDevice is now an alias of ble_device_base::ESPBTDevice: it cannot be forward declared
+#include "esphome/components/esp32_ble_tracker/esp32_ble_tracker.h"
+#endif
+
 #include <esp_gap_ble_api.h>
 #include <vector>
 #include <list>
 
 namespace esphome {
-
-#ifdef USE_ESP32_BLE_CLIENT
-namespace esp32_ble_tracker {
-  class ESPBTDevice;
-}
-#endif
 
 namespace bleadvcontroller {
 
